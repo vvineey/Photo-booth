@@ -1,20 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import ActionBar from '../components/ActionBar';
 import PageHeader from '../components/PageHeader';
-import type { UploadedPhotoResponse } from '../types/photoBooth';
+import type { BoothLayout, UploadedPhotoResponse } from '../types/photoBooth';
 import { uploadPhoto } from '../utils/api';
 import { downloadDataUrl } from '../utils/download';
 
 interface PreviewPageProps {
   imageData: string;
+  layout: BoothLayout;
   onRetake: () => void;
   onHome: () => void;
 }
 
-export default function PreviewPage({ imageData, onRetake, onHome }: PreviewPageProps) {
+export default function PreviewPage({ imageData, layout, onRetake, onHome }: PreviewPageProps) {
   const [uploadedPhoto, setUploadedPhoto] = useState<UploadedPhotoResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const frameStyle = {
+    '--frame-ratio': `${layout.width / layout.height}`,
+    aspectRatio: `${layout.width} / ${layout.height}`
+  } as CSSProperties;
 
   useEffect(() => {
     setUploadedPhoto(null);
@@ -29,16 +34,13 @@ export default function PreviewPage({ imageData, onRetake, onHome }: PreviewPage
     <section className="screen preview-screen">
       <PageHeader eyebrow="5단계" title="완성!" subtitle="이미지를 저장하거나 QR 코드로 다른 기기에서 열어보세요." />
       <div className="result-layout">
-        <img className="result-image" src={imageData} alt="완성된 포토부스 이미지" />
+        <img className="result-image frame-preview" src={imageData} alt="완성된 포토부스 이미지" style={frameStyle} />
         <aside className="qr-panel">
           <h2>QR 다운로드</h2>
           {uploadedPhoto ? (
-            <>
+            <div className="qr-code">
               <QRCodeCanvas value={uploadedPhoto.url} size={220} includeMargin />
-              <a href={uploadedPhoto.url} target="_blank" rel="noreferrer">
-                {uploadedPhoto.url}
-              </a>
-            </>
+            </div>
           ) : (
             <div className="qr-placeholder">{uploadError ?? 'QR 코드를 준비하고 있어요.'}</div>
           )}

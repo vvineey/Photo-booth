@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { PointerEvent } from 'react';
 import ActionBar from '../components/ActionBar';
 import PageHeader from '../components/PageHeader';
@@ -22,6 +22,10 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
   const [basePreview, setBasePreview] = useState<string | null>(null);
   const [color, setColor] = useState(COLORS[2]);
   const [isComposing, setIsComposing] = useState(false);
+  const frameStyle = {
+    '--frame-ratio': `${layout.width / layout.height}`,
+    aspectRatio: `${layout.width} / ${layout.height}`
+  } as CSSProperties;
 
   useEffect(() => {
     void buildBasePreview(layout, photos).then(setBasePreview);
@@ -118,7 +122,7 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
     <section className="screen editor-screen">
       <PageHeader eyebrow="4단계" title="낙서하기" subtitle="사진 위에 마음껏 그려주세요." />
       <div className="editor-layout">
-        <div className="photo-editor" style={{ aspectRatio: `${layout.width} / ${layout.height}` }}>
+        <div className="photo-editor frame-preview" style={frameStyle}>
           {basePreview && <img className="preview-layer" src={basePreview} alt="" />}
           <canvas
             ref={canvasRef}

@@ -646,7 +646,7 @@ button:disabled {
 
 .photo-editor {
   position: relative;
-  width: min(100%, 620px);
+  width: min(100%, 620px, calc(68vh * var(--frame-ratio)));
   max-height: 68vh;
   margin: 0 auto;
   border-radius: 18px 22px 20px 24px;
@@ -721,9 +721,10 @@ button:disabled {
 }
 
 .result-image {
-  width: min(100%, 560px);
+  width: min(100%, 620px, calc(68vh * var(--frame-ratio)));
+  aspect-ratio: var(--frame-ratio);
   max-height: 68vh;
-  object-fit: contain;
+  object-fit: fill;
   margin: 0 auto;
   display: block;
   border-radius: 18px 22px 20px 24px;

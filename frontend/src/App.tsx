@@ -81,7 +81,7 @@ export default function App() {
         />
       )}
       {step === 'preview' && finalImage && (
-        <PreviewPage imageData={finalImage} onRetake={retake} onHome={resetAll} />
+        <PreviewPage imageData={finalImage} layout={layout} onRetake={retake} onHome={resetAll} />
       )}
     </main>
   );

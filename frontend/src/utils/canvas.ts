@@ -125,10 +125,26 @@ export async function buildBasePreview(layout: BoothLayout, photos: string[]): P
   return canvas.toDataURL('image/png');
 }
 
-export function captureMirroredVideoFrame(video: HTMLVideoElement): string {
+export function captureMirroredVideoFrame(video: HTMLVideoElement, targetRatio = video.videoWidth / video.videoHeight): string {
+  const sourceWidth = video.videoWidth;
+  const sourceHeight = video.videoHeight;
+  const sourceRatio = sourceWidth / sourceHeight;
+  let sx = 0;
+  let sy = 0;
+  let sw = sourceWidth;
+  let sh = sourceHeight;
+
+  if (sourceRatio > targetRatio) {
+    sw = sourceHeight * targetRatio;
+    sx = (sourceWidth - sw) / 2;
+  } else {
+    sh = sourceWidth / targetRatio;
+    sy = (sourceHeight - sh) / 2;
+  }
+
   const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width = Math.round(sw);
+  canvas.height = Math.round(sh);
   const context = canvas.getContext('2d');
 
   if (!context) {
@@ -137,7 +153,7 @@ export function captureMirroredVideoFrame(video: HTMLVideoElement): string {
 
   context.translate(canvas.width, 0);
   context.scale(-1, 1);
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  context.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
   return canvas.toDataURL('image/png');
 }

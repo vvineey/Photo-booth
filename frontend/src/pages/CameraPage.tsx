@@ -4,7 +4,7 @@ import PageHeader from '../components/PageHeader';
 import { COUNTDOWN_SECONDS } from '../constants/app';
 import { useCamera } from '../hooks/useCamera';
 import type { BoothLayout } from '../types/photoBooth';
-import { captureMirroredVideoFrame } from '../utils/canvas';
+import { captureMirroredVideoFrame, getPhotoPlacements } from '../utils/canvas';
 
 interface CameraPageProps {
   layout: BoothLayout;
@@ -20,8 +20,11 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
   const [capturedCount, setCapturedCount] = useState(0);
   const [isShooting, setIsShooting] = useState(false);
   const isCancelledRef = useRef(false);
+  const photoPlacement = getPhotoPlacements(layout)[0];
+  const photoRatio = photoPlacement.width / photoPlacement.height;
 
   useEffect(() => {
+    isCancelledRef.current = false;
     void startCamera();
 
     return () => {
@@ -56,7 +59,7 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
         return;
       }
 
-      nextPhotos.push(captureMirroredVideoFrame(videoRef.current));
+      nextPhotos.push(captureMirroredVideoFrame(videoRef.current, photoRatio));
       setCapturedCount(nextPhotos.length);
       await wait(450);
     }
@@ -72,7 +75,7 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
         title="촬영"
         subtitle={`${layout.name} · ${capturedCount}/${layout.shotCount}컷 완료`}
       />
-      <div className="camera-stage">
+      <div className="camera-stage" style={{ aspectRatio: `${photoPlacement.width} / ${photoPlacement.height}` }}>
         {error ? (
           <div className="camera-error">{error}</div>
         ) : (

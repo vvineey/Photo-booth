@@ -1,5 +1,5 @@
 export const FOOTER_TEXT = "Children's Day Photo Booth";
-export const COUNTDOWN_SECONDS = 7;
+export const COUNTDOWN_SECONDS = 5;
 export const PEN_WIDTH = 18;
 export const COLORS = [
   '#111111',

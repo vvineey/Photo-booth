@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import ActionBar from '../components/ActionBar';
 import PageHeader from '../components/PageHeader';
 import { COUNTDOWN_SECONDS } from '../constants/app';
@@ -18,10 +18,16 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
   const { videoRef, error, isReady, startCamera, stopCamera } = useCamera();
   const [countdown, setCountdown] = useState<number | null>(null);
   const [capturedCount, setCapturedCount] = useState(0);
+  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [isShooting, setIsShooting] = useState(false);
   const isCancelledRef = useRef(false);
   const photoPlacement = getPhotoPlacements(layout)[0];
   const photoRatio = photoPlacement.width / photoPlacement.height;
+  const activeShotIndex = isShooting ? Math.min(capturedCount, layout.shotCount - 1) : null;
+  const cameraFrameStyle = {
+    '--camera-ratio': `${photoRatio}`,
+    aspectRatio: `${photoPlacement.width} / ${photoPlacement.height}`
+  } as CSSProperties;
 
   useEffect(() => {
     isCancelledRef.current = false;
@@ -51,6 +57,7 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
 
     setIsShooting(true);
     setCapturedCount(0);
+    setCapturedPhotos([]);
     const nextPhotos: string[] = [];
 
     for (let index = 0; index < layout.shotCount; index += 1) {
@@ -60,6 +67,7 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
       }
 
       nextPhotos.push(captureMirroredVideoFrame(videoRef.current, photoRatio));
+      setCapturedPhotos([...nextPhotos]);
       setCapturedCount(nextPhotos.length);
       await wait(450);
     }
@@ -75,13 +83,44 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
         title="촬영"
         subtitle={`${layout.name} · ${capturedCount}/${layout.shotCount}컷 완료`}
       />
-      <div className="camera-stage" style={{ aspectRatio: `${photoPlacement.width} / ${photoPlacement.height}` }}>
-        {error ? (
-          <div className="camera-error">{error}</div>
-        ) : (
-          <video ref={videoRef} className="camera-video" autoPlay muted playsInline />
-        )}
-        {countdown !== null && <div className="countdown">{countdown}</div>}
+      <div className="camera-layout">
+        <div className="camera-stage" style={cameraFrameStyle}>
+          {error ? (
+            <div className="camera-error">{error}</div>
+          ) : (
+            <video ref={videoRef} className="camera-video" autoPlay muted playsInline />
+          )}
+        </div>
+        <aside className="camera-side-panel">
+          <div className="countdown-card" aria-live="polite">
+            <span className="countdown-label">카운트다운</span>
+            <strong>{countdown ?? '-'}</strong>
+          </div>
+          <div className="shot-progress">
+            <strong>
+              {Math.min(capturedCount + (isShooting && capturedCount < layout.shotCount ? 1 : 0), layout.shotCount)}/
+              {layout.shotCount}
+            </strong>
+            <span>현재 촬영 위치</span>
+          </div>
+          <div className={`shot-preview-grid ${layout.id}`}>
+            {Array.from({ length: layout.shotCount }, (_, index) => (
+              <div
+                key={index}
+                className={`shot-preview-slot ${activeShotIndex === index ? 'active' : ''} ${
+                  capturedPhotos[index] ? 'filled' : ''
+                }`}
+                style={{ aspectRatio: `${photoPlacement.width} / ${photoPlacement.height}` }}
+              >
+                {capturedPhotos[index] ? (
+                  <img src={capturedPhotos[index]} alt={`${index + 1}번째 촬영 미리보기`} />
+                ) : (
+                  <span>{index + 1}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </aside>
       </div>
       <ActionBar>
         <button className="secondary" onClick={onHome} disabled={isShooting}>

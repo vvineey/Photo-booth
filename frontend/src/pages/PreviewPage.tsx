@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import ActionBar from '../components/ActionBar';
 import PageHeader from '../components/PageHeader';
@@ -21,7 +21,7 @@ export default function PreviewPage({ imageData, layout, onRetake, onHome }: Pre
     aspectRatio: `${layout.width} / ${layout.height}`
   } as CSSProperties;
 
-  useEffect(() => {
+  const saveQrPhoto = useCallback(() => {
     setUploadedPhoto(null);
     setUploadError(null);
 
@@ -29,6 +29,10 @@ export default function PreviewPage({ imageData, layout, onRetake, onHome }: Pre
       .then(setUploadedPhoto)
       .catch(() => setUploadError('QR용 이미지 저장에 실패했습니다. 백엔드가 실행 중인지 확인해 주세요.'));
   }, [imageData]);
+
+  useEffect(() => {
+    saveQrPhoto();
+  }, [saveQrPhoto]);
 
   return (
     <section className="screen preview-screen">
@@ -42,7 +46,14 @@ export default function PreviewPage({ imageData, layout, onRetake, onHome }: Pre
               <QRCodeCanvas value={uploadedPhoto.url} size={220} includeMargin />
             </div>
           ) : (
-            <div className="qr-placeholder">{uploadError ?? 'QR 코드를 준비하고 있어요.'}</div>
+            <div className="qr-placeholder">
+              <span>{uploadError ?? 'QR 코드를 준비하고 있어요.'}</span>
+              {uploadError && (
+                <button type="button" onClick={saveQrPhoto}>
+                  다시 시도
+                </button>
+              )}
+            </div>
           )}
         </aside>
       </div>

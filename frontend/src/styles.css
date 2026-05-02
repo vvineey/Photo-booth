@@ -990,9 +990,20 @@ button:disabled {
 .qr-placeholder {
   min-height: 220px;
   display: grid;
+  gap: 14px;
   place-items: center;
   color: #6a5c73;
   font-weight: 800;
+}
+
+.qr-placeholder button {
+  min-height: 44px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--deep-blue);
+  font-weight: 1000;
+  box-shadow: 0 6px 0 rgba(77, 83, 132, 0.18);
 }
 
 @media (max-width: 820px) {

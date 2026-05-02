@@ -12,8 +12,10 @@ const HAND_MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const PINCH_THRESHOLD = 0.055;
 const HAND_SMOOTHING = 0.35;
+const ERASER_WIDTH = PEN_WIDTH * 1.8;
 
 type DoodleMode = 'direct' | 'hand';
+type DoodleTool = 'pen' | 'eraser';
 type HandStatus = 'idle' | 'loading' | 'ready' | 'drawing' | 'error';
 
 interface HandPoint {
@@ -55,9 +57,11 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
   const smoothedHandPointRef = useRef<HandPoint | null>(null);
   const handStatusRef = useRef<HandStatus>('idle');
   const colorRef = useRef(COLORS[2]);
+  const doodleToolRef = useRef<DoodleTool>('pen');
   const drawingRef = useRef(false);
   const [basePreview, setBasePreview] = useState<string | null>(null);
   const [doodleMode, setDoodleMode] = useState<DoodleMode>('direct');
+  const [doodleTool, setDoodleTool] = useState<DoodleTool>('pen');
   const [handStatus, setHandStatus] = useState<HandStatus>('idle');
   const [handCursor, setHandCursor] = useState<HandPoint | null>(null);
   const [color, setColor] = useState(COLORS[2]);
@@ -92,6 +96,10 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
   }, [color]);
 
   useEffect(() => {
+    doodleToolRef.current = doodleTool;
+  }, [doodleTool]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     if (!canvas || !context) {
@@ -103,7 +111,16 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.lineWidth = PEN_WIDTH;
+    context.globalCompositeOperation = 'source-over';
   }, [layout]);
+
+  const applyDrawingStyle = (context: CanvasRenderingContext2D, tool: DoodleTool, nextColor: string) => {
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+    context.strokeStyle = tool === 'eraser' ? 'rgba(0, 0, 0, 1)' : nextColor;
+    context.lineWidth = tool === 'eraser' ? ERASER_WIDTH : PEN_WIDTH;
+  };
 
   const stopHandMode = (resetState = true) => {
     if (handAnimationRef.current !== null) {
@@ -167,8 +184,7 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
           setHandCursor({ x: (point.x / canvas.width) * 100, y: (point.y / canvas.height) * 100 });
 
           if (isPinching) {
-            context.strokeStyle = colorRef.current;
-            context.lineWidth = PEN_WIDTH;
+            applyDrawingStyle(context, doodleToolRef.current, colorRef.current);
             if (!handDrawingRef.current) {
               context.beginPath();
               context.moveTo(point.x, point.y);
@@ -274,7 +290,7 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
     const point = getPoint(event);
     drawingRef.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
-    context.strokeStyle = color;
+    applyDrawingStyle(context, doodleTool, color);
     context.beginPath();
     context.moveTo(point.x, point.y);
   };
@@ -368,13 +384,24 @@ export default function DoodlePage({ layout, frame, photos, footerText, onDone, 
               <div className={`hand-status ${handStatus}`}>{handStatusText}</div>
             </div>
           )}
+          <div className="tool-toggle" aria-label="낙서 도구">
+            <button className={doodleTool === 'pen' ? 'selected' : ''} onClick={() => setDoodleTool('pen')}>
+              펜
+            </button>
+            <button className={doodleTool === 'eraser' ? 'selected' : ''} onClick={() => setDoodleTool('eraser')}>
+              지우개
+            </button>
+          </div>
           <div className="palette" aria-label="색상 팔레트">
             {COLORS.map((nextColor) => (
               <button
                 key={nextColor}
-                className={`swatch ${color === nextColor ? 'selected' : ''}`}
+                className={`swatch ${color === nextColor && doodleTool === 'pen' ? 'selected' : ''}`}
                 style={{ backgroundColor: nextColor }}
-                onClick={() => setColor(nextColor)}
+                onClick={() => {
+                  setColor(nextColor);
+                  setDoodleTool('pen');
+                }}
                 aria-label={`색상 ${nextColor}`}
               />
             ))}

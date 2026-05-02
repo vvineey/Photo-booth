@@ -26,6 +26,12 @@ export function useCamera(): UseCameraResult {
       stopCamera();
       setError(null);
 
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError('이 브라우저에서는 카메라 API를 사용할 수 없습니다. localhost 주소인지 확인해 주세요.');
+        setIsReady(false);
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: 'user' },
@@ -43,8 +49,19 @@ export function useCamera(): UseCameraResult {
       }
 
       setIsReady(true);
-    } catch {
-      setError('카메라 권한을 허용해 주세요. iPad Safari에서는 주소창의 aA 또는 설정에서 카메라 권한을 확인할 수 있습니다.');
+    } catch (error) {
+      console.error('Camera start failed:', error);
+      const errorName = error instanceof DOMException ? error.name : '';
+
+      if (errorName === 'NotAllowedError') {
+        setError('카메라 권한이 차단되어 있습니다. 주소창 왼쪽 아이콘에서 카메라를 허용한 뒤 다시 시도해 주세요.');
+      } else if (errorName === 'NotFoundError') {
+        setError('사용 가능한 카메라를 찾을 수 없습니다. 카메라 연결 상태를 확인해 주세요.');
+      } else if (errorName === 'NotReadableError') {
+        setError('카메라를 다른 앱이나 탭에서 사용 중입니다. 다른 카메라 앱을 종료한 뒤 다시 시도해 주세요.');
+      } else {
+        setError('카메라를 시작할 수 없습니다. 브라우저 권한을 확인한 뒤 다시 시도해 주세요.');
+      }
       setIsReady(false);
     }
   }, [stopCamera]);

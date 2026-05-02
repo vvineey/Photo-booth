@@ -86,7 +86,12 @@ export default function CameraPage({ layout, onDone, onHome }: CameraPageProps) 
       <div className="camera-layout">
         <div className="camera-stage" style={cameraFrameStyle}>
           {error ? (
-            <div className="camera-error">{error}</div>
+            <div className="camera-error">
+              <p>{error}</p>
+              <button onClick={startCamera} type="button">
+                다시 시도
+              </button>
+            </div>
           ) : (
             <video ref={videoRef} className="camera-video" autoPlay muted playsInline />
           )}
